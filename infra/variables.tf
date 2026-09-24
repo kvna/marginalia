@@ -1,12 +1,12 @@
 variable "location" {
   type        = string
-  description = "Azure region for data and compute. uksouth: lowest latency to the user, and where Cosmos DB, Container Apps and Log Analytics are all available."
-  default     = "uksouth"
+  description = "Azure region for data and compute. northeurope (Ireland), per the user's explicit instruction — Cosmos DB, Container Apps and Log Analytics are all available there, and its Container Apps rates are lower than uksouth's."
+  default     = "northeurope"
 }
 
 variable "static_web_app_location" {
   type        = string
-  description = "Azure Static Web Apps is only offered in a handful of regions; uksouth isn't one. westeurope is the nearest supported region — the CDN in front of it still serves the UK at the edge."
+  description = "Azure Static Web Apps is offered in only five regions (Central US, East US 2, West US 2, West Europe, East Asia) and northeurope is not one of them — confirmed via `az provider show -n Microsoft.Web`. westeurope is the nearest supported region; SWA's global CDN serves from the edge regardless of control-plane region. This is the documented exception to the northeurope-everywhere rule."
   default     = "westeurope"
 }
 

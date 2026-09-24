@@ -23,6 +23,7 @@ infra/**/*.tfstate
 infra/**/*.tfstate.*
 infra/**/*.tfvars
 !infra/**/*.tfvars.example
+infra/**/*_override.tf
 # .terraform.lock.hcl is intentionally NOT ignored — committed for
 # reproducible provider versions across machines.
 

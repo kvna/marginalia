@@ -1,7 +1,7 @@
 variable "location" {
   type        = string
-  description = "Azure region for the state storage account and budget's resource group."
-  default     = "uksouth"
+  description = "Azure region for the state storage account and budget's resource group. northeurope (Ireland), matching the root module."
+  default     = "northeurope"
 }
 
 variable "alert_email" {

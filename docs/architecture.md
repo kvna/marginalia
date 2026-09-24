@@ -2,9 +2,35 @@
 
 **Status: paper design only. Nothing in `infra/` has been applied. No Azure
 resource exists because of this document.** Every number below is either a
-live Azure retail price (UK South, pulled from `prices.azure.com` on
+live Azure retail price (**North Europe**, pulled from `prices.azure.com` on
 2026-09-24) or a stated assumption, never a guess presented as a fact.
-GBP figures use the live USD→GBP rate on that date, **1 USD = 0.75645 GBP**.
+GBP figures use the live USD→GBP rate on that date, **1 USD = 0.754513 GBP**.
+
+## Region: North Europe (Ireland)
+
+Per the explicit instruction on SUP-5, **every resource in this design is in
+`northeurope`**, with exactly one exception, called out rather than buried:
+
+> **Static Web Apps is deployed to `westeurope`.** Azure Static Web Apps is
+> offered in only five regions — Central US, East US 2, West US 2, West
+> Europe, East Asia — and North Europe is not one of them. Confirmed against
+> the live subscription: `az provider show -n Microsoft.Web
+> --query "resourceTypes[?resourceType=='staticSites'].locations"` returns
+> exactly those five. West Europe is the nearest supported region. This is a
+> control-plane region only — Static Web Apps serves content from a global
+> CDN edge regardless — and the resource is free in either region, so there
+> is no cost or latency consequence. If a future Azure release adds North
+> Europe, it is a one-line change to `static_web_app_location`.
+
+North Europe is also the *cheaper* choice for the meter that matters most
+here: Container Apps active vCPU is **$0.000024/vCPU-second** in North Europe
+against **$0.000034** in UK South (~29% lower), and active memory
+**$0.000003/GiB-second** against **$0.000004**. Nothing about this design is
+worse for being in Ireland.
+
+**Nothing has been deployed to any region.** There is no installation to
+move or delete — no `terraform apply` has been run at any point in this task,
+so there is no resource in UK South, North Europe, or anywhere else.
 
 ## Bottom line
 
@@ -24,11 +50,11 @@ staying personal-scale, detailed resource by resource below.
 | Container Apps (API), `minReplicas=0` | £0.00 | — this *is* the free-tier-shaped choice |
 | Container Apps Job (extraction), on-demand | £0.00 | Dedicated VM/VMSS — bills 24/7 whether a book is being parsed or not |
 | Static Web Apps (frontend) | £0.00 | — Free tier is the free alternative |
-| Cosmos DB, free tier | £0.00 | Serverless (still £0 at this volume, but meters every request past a threshold); Postgres Flexible Server (~£10.49–12/month, cannot scale to zero) |
+| Cosmos DB, free tier | £0.00 | Serverless (still £0 at this volume, but meters every request past a threshold); Postgres Flexible Server B1MS (**£9.91/month** compute alone in North Europe, cannot scale to zero) |
 | Log Analytics workspace | £0.00 (within 5GB/month free grant) | Disabling logging entirely — rejected, you'd lose the only visibility into cold starts and job failures |
 | Entra ID app registrations ×2 | £0.00 | — Entra ID Free tier covers app registrations, delegated consent, and federated credentials |
 | Budget alert + action group | £0.00 | — no paid alternative exists; Azure Monitor budgets are free |
-| Terraform state storage (Blob, Hot LRS) | £0.0001 (rounds to £0.00) | Terraform Cloud free tier — rejected only because it adds a second platform/account to manage for one state file |
+| Terraform state storage (Blob, Hot LRS) | £0.00 (a ~100KB state file at $0.022/GB-month in North Europe is $0.000002/month) | Terraform Cloud free tier — rejected only because it adds a second platform/account to manage for one state file |
 | Container image registry | £0.00 (GHCR, public repo) | Azure Container Registry Basic — £3.83/month for something GHCR does free here |
 | GitHub Actions CI/CD | £0.00 (public repo = unlimited free minutes) | — |
 | **Total, steady state** | **£0.00/month** | |
@@ -47,14 +73,14 @@ traffic. A VM bills for every hour it exists. Container Apps' Consumption
 plan is the only Azure compute option that is both a public HTTPS endpoint
 *and* genuinely bills nothing while idle.
 
-**Pricing (UK South, confirmed via the Azure Retail Prices API):**
+**Pricing (North Europe, confirmed via the Azure Retail Prices API):**
 
-| Meter | Price |
-|---|---|
-| vCPU, active | $0.000034 / vCPU-second |
-| Memory, active | $0.000004 / GiB-second |
-| Requests | $0.40 / million |
-| vCPU / memory, idle (allocated but not processing a request) | $0.000004 / vCPU-second, $0.000004 / GiB-second |
+| Meter | Price (North Europe) | UK South, for comparison |
+|---|---|---|
+| vCPU, active | $0.000024 / vCPU-second | $0.000034 |
+| Memory, active | $0.000003 / GiB-second | $0.000004 |
+| Requests | $0.40 / million | $0.40 |
+| vCPU / memory, idle (allocated but not processing a request) | $0.000003 / vCPU-second, $0.000003 / GiB-second | $0.000004 / $0.000004 |
 
 **Free grant, per subscription per month** (confirmed against the current
 Azure Container Apps pricing page): the first **180,000 vCPU-seconds**,
@@ -110,6 +136,15 @@ headroom is the actual answer to "what if the real CPU/memory number from
 SUP-4 is bigger than the placeholder" — it would need to be dramatically
 bigger, not just somewhat bigger, before this stops being free.
 
+**The sanity check that doesn't rely on the free grant at all.** If Azure
+withdrew the monthly grant tomorrow, that same combined usage priced at
+North Europe retail would be: 4,600 vCPU-s × $0.000024 = **$0.110**, 9,200
+GiB-s × $0.000003 = **$0.028**, 10,000 requests = **$0.004**. Total
+**$0.142/month ≈ £0.11/month**. So the £0.00 headline isn't balanced on the
+free grant being permanent — the underlying compute is worth about eleven
+pence a month at this usage. That is the number to hold onto if the grant
+ever changes.
+
 **Rejected alternative: Azure Batch or a dedicated VM for parsing.** Both
 bill for provisioned compute whether or not a book is being parsed; a Job
 on the Consumption plan bills only the seconds it actually runs.
@@ -121,15 +156,16 @@ on the Consumption plan bills only the seconds it actually runs.
 £0.00. 100GB bandwidth/month, free managed SSL, two custom domains, a
 personal app's traffic will not approach that ceiling.
 
-**One real constraint found while writing the Terraform:** Static Web Apps
-is only offered in five regions — Central US, East US 2, West US 2, West
-Europe, East Asia — and **UK South is not one of them** (confirmed via
-`az provider show -n Microsoft.Web`). Every other resource in this design
-sits in `uksouth` for lowest latency to the user; the Static Web App itself
-is deployed to **West Europe**, the nearest supported region — its global
-CDN still serves the UK at the edge regardless of the control-plane region.
-No cost implication, just a region choice worth knowing about before
-someone wonders why one resource looks geographically inconsistent.
+**The one region exception, repeated here where it applies:** Static Web
+Apps is only offered in five regions — Central US, East US 2, West US 2,
+West Europe, East Asia — and **North Europe is not one of them** (confirmed
+via `az provider show -n Microsoft.Web` against the live subscription).
+Every other resource in this design sits in `northeurope`; the Static Web
+App is deployed to **West Europe**, the nearest supported region. Its global
+CDN serves from the edge regardless of control-plane region, and the
+resource is free either way, so this costs nothing and changes no latency
+the user would notice. See the Region section at the top for the full
+reasoning.
 
 **Rejected alternative: none, really** — Static Web Apps free tier already
 *is* the free alternative to itself. The only other option (Container Apps
@@ -146,8 +182,9 @@ Confirmed via the Retail Prices API: Cosmos DB's free tier gives **1000
 RU/s of provisioned throughput and 25GB of storage, entirely free,
 indefinitely, one account per subscription** (`100 RU/s | Free Tier |
 $0.00` and `Data Stored | Free Tier | $0.00/GB-month`, both real meter
-rows, not marketing copy). Serverless is priced per request unit
-consumed — `1M RUs | $0.297` in UK South, plus `$0.25/GB-month` storage —
+rows, not marketing copy; both confirmed present in `northeurope`).
+Serverless is priced per request unit consumed — `1M RUs | $0.283` in North
+Europe (it was $0.297 in UK South), plus `$0.25/GB-month` storage —
 and is genuinely close to free at personal-library volume too, but it's
 *metered* rather than *free*, and the free tier is available at no cost up
 to a ceiling a personal note-and-graph app won't reach. Free tier wins on
@@ -178,12 +215,16 @@ edge-list and the right partition key answers the same two queries more
 cheaply.
 
 **Rejected: Postgres Flexible Server**, per the issue's own steer, now with
-a real number rather than "roughly": Burstable **B1ms** is **$0.019/hour**
-in UK South (confirmed via Retail Prices API) — $0.019 × 730 hours/month =
-**$13.87/month ≈ £10.49/month**, before its mandatory minimum storage
-allocation adds a little more. It also **cannot scale to zero** — it's
-billed by the hour whether the app is used or not, which is disqualifying
-against this design's hard scale-to-zero requirement, independent of cost.
+a real North Europe number rather than "roughly": Burstable **B1MS** is
+**$0.018/hour** in North Europe (confirmed via Retail Prices API,
+`Azure Database for PostgreSQL Flexible Server Burstable`) — $0.018 × 730
+hours/month = **$13.14/month ≈ £9.91/month** for the compute alone, before
+its mandatory minimum storage allocation and backup storage
+(`$0.095/GB-month` beyond the free allowance) add more. So the issue's
+"roughly £10–12/month" estimate was accurate; the real floor is just under
+£10. It also **cannot scale to zero** — it's billed by the hour whether the
+app is used or not, which is disqualifying against this design's hard
+scale-to-zero requirement, independent of cost.
 
 ---
 
@@ -297,20 +338,37 @@ for `linux_amd64` and `darwin_arm64`, and:
 - **`infra/bootstrap`**: `terraform plan` ran against the real Azure
   subscription (read-only — a plan does not create anything). Result:
   **5 to add, 0 to change, 0 to destroy** — resource group, action group,
-  budget, storage account, container. Clean.
+  budget, storage account, container. Clean, with `location = "northeurope"`
+  confirmed in the planned output.
 - **`infra/`** (root module): planned against the same subscription with a
   temporary local backend override (removed before commit — the committed
   config still points at the real remote backend, which doesn't exist
-  until step 1 above runs). Found and fixed one real bug in the process:
-  `azuread_application` requires `requested_access_token_version = 2` once
-  `sign_in_audience` includes personal Microsoft accounts — the plan
-  rejected the config until that was added. After the fix: **17 to add, 0
-  to change, 0 to destroy**, resolving cleanly with one expected exception —
-  the data lookup for the bootstrap storage account fails until bootstrap
-  is actually applied, which is the correct behaviour for a two-stage
-  bootstrap-then-root design, not a bug.
+  until step 1 above runs). Result: **18 to add, 0 to change, 0 to destroy,
+  and no errors.** Planned locations, read straight out of the plan:
+  `northeurope` for the resource group, Container Apps environment,
+  extraction Job, Cosmos DB account and Log Analytics workspace;
+  `westeurope` for the Static Web App only, for the region-support reason
+  documented above. The Container App's own `location` is
+  `(known after apply)` because it inherits from its environment, which is
+  `northeurope`.
 
-**No `terraform apply` was run. No resource exists because of this task.**
+**Two real bugs were found and fixed by planning** — the reason this was
+worth doing rather than writing HCL and calling it designed:
+
+1. `azuread_application` requires `requested_access_token_version = 2` once
+   `sign_in_audience` includes personal Microsoft accounts. The plan
+   rejected the config until that was added.
+2. The GitHub Actions role assignment on the state storage account used a
+   `data "azurerm_storage_account"` lookup, which **fails at plan time
+   against an empty subscription** — so the root module could only be
+   planned *after* bootstrap had been applied, quietly breaking the
+   reproducible-from-empty requirement. Replaced with a resource ID
+   constructed from subscription + resource group + account name (all
+   deterministic). That is what took the root module from "17 to add plus
+   an error" to a clean 18.
+
+**No `terraform apply` was run. No resource exists in any region because of
+this task.**
 
 ## Open items for the user
 
@@ -327,3 +385,12 @@ for `linux_amd64` and `darwin_arm64`, and:
 4. **State storage account name** (`stmarginaliatfstate` used during
    validation) must be globally unique — pick the real value before
    step 1 of the apply sequence above.
+5. **`alert_email`** in `infra/bootstrap/` has no default, deliberately —
+   the budget alert is worthless going to an address you don't read. Set it
+   at apply time.
+
+**Settled, not open:** the region. North Europe (Ireland) throughout, per
+the instruction on SUP-5, with Static Web Apps in West Europe as the single
+documented exception because Azure does not offer it in North Europe. No
+resource has been deployed to any region, so there is nothing to move or
+delete.
