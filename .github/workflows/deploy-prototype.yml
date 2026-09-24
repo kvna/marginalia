@@ -1,0 +1,64 @@
+#
+# Deploys the clickable prototype to Azure Static Web Apps (Free tier).
+#
+# The app is a static export — `web/out` is plain files, so there is no Node
+# process, no managed API and nothing that can accrue cost. `skip_api_build` is
+# set for the same reason: there is no API to build, and letting Oryx go looking
+# for one just makes the deploy slower and noisier.
+#
+# The only secret is the Static Web Apps deployment token. No subscription
+# credentials are needed to publish, so this workflow cannot touch any other
+# Azure resource.
+#
+name: Deploy prototype
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "web/**"
+      - ".github/workflows/deploy-prototype.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-prototype
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Build and deploy to Azure Static Web Apps
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install
+        working-directory: web
+        run: npm ci
+
+      # The same gates CI runs, repeated here so a broken build can never be
+      # the thing that reaches the deployed URL.
+      - name: Verify
+        working-directory: web
+        run: |
+          npm run lint
+          npm run typecheck
+          npm test
+
+      - name: Build static export
+        working-directory: web
+        run: npm run build
+
+      - name: Deploy
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          action: upload
+          app_location: "web/out"
+          skip_app_build: true
+          skip_api_build: true
