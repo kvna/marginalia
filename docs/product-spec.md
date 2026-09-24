@@ -364,6 +364,68 @@ this document since it's integration config, not library data.
 
 ---
 
+## 8. Data hooks for visual weight (for SUP-6)
+
+Design feedback (relayed via SUP-2) asks that key concepts and relationships
+"pop" through contrast, size, and shape rather than requiring the reader to
+extract hierarchy themselves, and that transitions between topics be
+purposeful rather than decorative. This section is the data-model half of
+that: which attributes already in this schema are strong enough signals to
+drive visual weight, so SUP-6 has a concrete hook instead of inventing its
+own scoring. Choosing the actual colors, sizes, shapes, and motion curves is
+the Product Designer's call, not this document's — this stops at "here is
+the number/enum to key off," not "here is what it should look like."
+
+### What drives emphasis for a Concept
+Concepts don't carry a stored weight, and this document doesn't add one — a
+derived signal is enough, and storing it risks drifting out of sync the way
+`inbound_reference_count` on Work does not (that one's updated by an explicit
+trigger on edge insert/dismiss; a naive Concept counter wouldn't have that
+discipline yet). The signal is:
+
+- **Occurrence count** — number of non-dismissed `NoteConcept` rows
+  referencing the Concept, plus non-dismissed `uses_idea` edges targeting it.
+  A concept touched by one note should read smaller/quieter than System 1 /
+  System 2 touched by twelve.
+- **Origin resolved or not** — `originating_work_id` set vs. null. A concept
+  with a known origin (Kahneman & Tversky) is a stronger, more citable hub
+  than one the user coined themselves; that's a shape/style distinction
+  (e.g., solid vs. outline, matching the Work owned/unowned treatment in §1),
+  not a size one.
+
+Both are cheap to compute at read time (a count against an existing FK, no
+new column) at the prototype's data scale; precomputing them is a
+Work-style denormalization to revisit with the Backend Engineer later, not a
+decision to make now.
+
+### What drives emphasis for an Edge
+Already fully specified in §4 — no new attribute needed:
+- **Confidence band** (`high`/`medium`/`low`) is the existing signal for
+  line weight/opacity/saturation on any rendered edge.
+- **Evidence is universal, not a nice-to-have** — §4's hard rule means every
+  edge has a page and a quote, so "any edge can be opened to see why it
+  exists" is true for all of them, not a subset to flag specially.
+
+### What counts as a transition-worthy navigation event
+A transition is justified when the user follows a modeled relationship — an
+edge or an FK — from one node to another. It's not justified for actions
+that stay inside one node's data (sorting, filtering, expanding a panel in
+place). Concretely, in this schema:
+
+- Clicking an inbound/outbound `Edge` row on book detail — the two ends of
+  one Edge row.
+- Clicking a graph node or edge to open what it points at (§7 Graph view).
+- Clicking a `Concept.originating_work_id` link (concepts browser → Work) or
+  a `[[concept]]` link inside a note (note editor → concept).
+- Clicking an `attributes_to_author` edge's target, or an Author to their
+  other Works via `WorkAuthor`.
+
+Anything that doesn't cross one of those FK/edge boundaries — re-sorting the
+library grid, toggling a graph layer, switching tabs on book detail — is a
+state change, not a transition, and shouldn't get traversal-style motion.
+
+---
+
 ## Open questions
 
 None on the work/copy split or the four edge types — this document settles
