@@ -1,0 +1,36 @@
+# Node
+node_modules/
+web/.next/
+web/out/
+web/dist/
+npm-debug.log*
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+dist/
+build/
+
+# Terraform
+infra/**/.terraform/
+infra/**/*.tfstate
+infra/**/*.tfstate.*
+infra/**/.terraform.lock.hcl
+infra/**/*.tfvars
+!infra/**/*.tfvars.example
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+
+# Env
+.env
+.env.local
+*.local
