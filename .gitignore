@@ -34,3 +34,7 @@ infra/**/*.tfvars
 .env
 .env.local
 *.local
+
+# Next.js
+web/next-env.d.ts
+web/*.tsbuildinfo

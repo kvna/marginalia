@@ -7,10 +7,10 @@ export default tseslint.config(
   ...tseslint.configs.recommended,
   {
     languageOptions: {
-      globals: { ...globals.node },
+      globals: { ...globals.node, ...globals.browser },
     },
   },
   {
-    ignores: ["node_modules/", "dist/", ".next/"],
+    ignores: ["node_modules/", "dist/", ".next/", "out/", "next-env.d.ts"],
   },
 );

@@ -4,6 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
@@ -14,6 +17,18 @@
     "globals": "^17.12.0",
     "typescript": "^5.7.3",
     "typescript-eslint": "^8.70.1",
-    "vitest": "^5.0.1"
+    "vitest": "^5.0.1",
+    "@tailwindcss/postcss": "^4.1.13",
+    "@types/d3-force": "^3.0.10",
+    "@types/node": "^22.10.0",
+    "@types/react": "^19.1.10",
+    "@types/react-dom": "^19.1.7",
+    "tailwindcss": "^4.1.13"
+  },
+  "dependencies": {
+    "d3-force": "^3.0.0",
+    "next": "^15.5.4",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1"
   }
 }

@@ -1,0 +1,294 @@
+@import "tailwindcss";
+
+/**
+ * The visual system, in one place.
+ *
+ * Hierarchy is carried by three things in priority order — weight/size contrast,
+ * shape, then colour — so the screens still read if colour is removed. Each edge
+ * type owns a hue *and* a line style, and each entity kind owns a shape: works
+ * are rectangles, concepts are lozenges, authors are circles. Nothing is
+ * distinguished by hue alone.
+ *
+ * Motion is only used when the user crosses a modeled relationship (spec §8).
+ * Sorting, filtering and tab switches get no animation, and everything here is
+ * disabled under prefers-reduced-motion.
+ */
+
+@theme {
+  --color-void: #08090b;
+  --color-page: #0d0f13;
+  --color-surface: #14171d;
+  --color-raised: #1b1f27;
+  --color-line: #262b35;
+  --color-line-bright: #38404d;
+
+  --color-paper: #f5f2ea;
+  --color-muted: #a2aab8;
+  --color-dim: #6f7889;
+
+  /* Edge types. Also differentiated by dash pattern, never hue alone. */
+  --color-cites: #e9b44c;
+  --color-mentions: #45c9b8;
+  --color-attrib: #a78bfa;
+  --color-idea: #f2789f;
+
+  --color-owned: #e9b44c;
+  --color-concept: #f2789f;
+
+  --font-display: ui-serif, "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", "Cascadia Mono", monospace;
+
+  --ease-traverse: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background-color: var(--color-page);
+  color: var(--color-paper);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* A faint page grain so large dark areas do not read as flat black. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(60rem 40rem at 15% -10%, rgb(233 180 76 / 6%), transparent 70%),
+    radial-gradient(50rem 40rem at 90% 0%, rgb(69 201 184 / 5%), transparent 70%);
+}
+
+::selection {
+  background: rgb(233 180 76 / 28%);
+}
+
+@layer components {
+  /* ---------------------------------------------------------- typography */
+
+  .display {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+    line-height: 1.02;
+  }
+
+  /* The section label that carries the eye down a column of panels. */
+  .eyebrow {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--color-dim);
+  }
+
+  /* --------------------------------------------------------------- chips */
+
+  /*
+   * Concept chips. Size is set by --pop (0–1, derived from occurrence count),
+   * so a concept touched by twelve notes is physically bigger than one touched
+   * by one. Shape carries origin: solid means the origin resolved.
+   */
+  .chip-concept {
+    --pop: 0;
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.4rem;
+    border-radius: 999px;
+    padding: calc(0.2rem + var(--pop) * 0.18rem) calc(0.6rem + var(--pop) * 0.4rem);
+    font-size: calc(0.75rem + var(--pop) * 0.36rem);
+    font-weight: calc(500 + var(--pop) * 200);
+    line-height: 1.15;
+    border: 1px solid color-mix(in oklab, var(--color-concept) 55%, transparent);
+    background: color-mix(
+      in oklab,
+      var(--color-concept) calc(8% + var(--pop) * 16%),
+      transparent
+    );
+    color: color-mix(in oklab, var(--color-concept) 78%, white);
+    transition:
+      background 180ms var(--ease-traverse),
+      transform 180ms var(--ease-traverse);
+  }
+
+  .chip-concept:hover {
+    background: color-mix(in oklab, var(--color-concept) 30%, transparent);
+    transform: translateY(-1px);
+  }
+
+  /* Origin unresolved — outline only, matching the unowned-work treatment. */
+  .chip-concept[data-origin="unresolved"] {
+    background: transparent;
+    border-style: dashed;
+    color: var(--color-muted);
+  }
+
+  .chip-tag {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 0.25rem;
+    border: 1px solid var(--color-line);
+    background: var(--color-surface);
+    padding: 0.1rem 0.4rem;
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    color: var(--color-muted);
+  }
+
+  .chip-tag:hover {
+    border-color: var(--color-line-bright);
+    color: var(--color-paper);
+  }
+
+  /* ------------------------------------------------------- edge language */
+
+  .edge-swatch {
+    display: inline-block;
+    width: 1.75rem;
+    height: 0;
+    border-top-width: 2px;
+    vertical-align: middle;
+  }
+
+  .edge-cites {
+    border-top-style: solid;
+    border-color: var(--color-cites);
+  }
+
+  .edge-mentions {
+    border-top-style: solid;
+    border-color: var(--color-mentions);
+    opacity: 0.85;
+  }
+
+  .edge-attributes_to_author {
+    border-top-style: dashed;
+    border-color: var(--color-attrib);
+  }
+
+  .edge-uses_idea {
+    border-top-style: dotted;
+    border-color: var(--color-idea);
+  }
+
+  /* --------------------------------------------------------- containers */
+
+  .panel {
+    border: 1px solid var(--color-line);
+    border-radius: 0.75rem;
+    background: color-mix(in oklab, var(--color-surface) 88%, transparent);
+  }
+
+  .hairline {
+    border-color: var(--color-line);
+  }
+
+  /* Outline treatment for a work with no Copy — used in list rows and cards. */
+  .unowned {
+    border-style: dashed;
+    background: transparent;
+  }
+
+  /* ------------------------------------------------------------- motion */
+
+  /*
+   * Arrival highlight. Applied once when a screen is reached by following an
+   * edge or an FK, so the eye lands where the relationship pointed instead of
+   * having to re-find it.
+   */
+  @keyframes arrive {
+    0% {
+      opacity: 0;
+      transform: translateY(0.75rem);
+    }
+    100% {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes trace {
+    0% {
+      box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--color-cites) 80%, transparent);
+      background: color-mix(in oklab, var(--color-cites) 12%, transparent);
+    }
+    100% {
+      box-shadow: inset 0 0 0 1px transparent;
+      background: transparent;
+    }
+  }
+
+  .arriving {
+    animation: arrive 420ms var(--ease-traverse) both;
+  }
+
+  .traced {
+    animation: trace 1100ms var(--ease-traverse) both;
+  }
+
+  /* Graph link draw-in, so the shape assembles rather than snapping in. */
+  @keyframes draw-link {
+    from {
+      stroke-dashoffset: 400;
+      opacity: 0;
+    }
+    to {
+      stroke-dashoffset: 0;
+      opacity: 1;
+    }
+  }
+
+  .link-draw {
+    animation: draw-link 900ms var(--ease-traverse) both;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Markdown rendered inside a note. Kept small and typographic. */
+.prose-note {
+  font-size: 0.9375rem;
+  line-height: 1.68;
+  color: color-mix(in oklab, var(--color-paper) 88%, var(--color-muted));
+}
+
+.prose-note p {
+  margin-bottom: 0.85rem;
+}
+
+.prose-note strong {
+  color: var(--color-paper);
+  font-weight: 600;
+}
+
+.prose-note em {
+  font-family: var(--font-display);
+  font-style: italic;
+  color: var(--color-paper);
+}
+
+.prose-note ul {
+  margin: 0 0 0.85rem 1.1rem;
+  list-style: disc;
+}
+
+/* A quoted sentence of evidence. Serif, because it is the book talking. */
+.evidence {
+  font-family: var(--font-display);
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  color: color-mix(in oklab, var(--color-paper) 92%, transparent);
+}
