@@ -77,7 +77,9 @@ export default function SettingsPage() {
                 label="Last sync"
                 value={
                   connection.last_sync
-                    ? new Date(connection.last_sync).toLocaleString("en-GB")
+                    ? new Date(connection.last_sync).toLocaleString("en-GB", {
+                        timeZone: "UTC",
+                      })
                     : "never"
                 }
               />
