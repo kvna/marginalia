@@ -1,0 +1,73 @@
+@import "tailwindcss";
+
+:root {
+  --paper: #faf8f4;
+  --paper-raised: #ffffff;
+  --paper-sunken: #f1ede3;
+  --ink: #1c1a17;
+  --ink-muted: #6b655c;
+  --ink-faint: #a39c8d;
+  --line: #e4ddd0;
+  --line-strong: #cfc6b3;
+
+  --accent: #3452eb;
+  --accent-ink: #1d2a8f;
+  --accent-soft: #e8ecfd;
+
+  --hub: #c1440e;
+  --hub-soft: #fbe9df;
+
+  --tag: #0f6f5c;
+  --tag-soft: #e3f2ee;
+
+  /* edge types: colour carries type, weight carries confidence */
+  --edge-cites: #2f6fed;
+  --edge-mentions: #189a6c;
+  --edge-attributes: #c98a1c;
+  --edge-idea: #9b3fd1;
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-paper-raised: var(--paper-raised);
+  --color-paper-sunken: var(--paper-sunken);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-faint: var(--ink-faint);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-soft: var(--accent-soft);
+  --color-hub: var(--hub);
+  --color-hub-soft: var(--hub-soft);
+  --color-tag: var(--tag);
+  --color-tag-soft: var(--tag-soft);
+  --color-edge-cites: var(--edge-cites);
+  --color-edge-mentions: var(--edge-mentions);
+  --color-edge-attributes: var(--edge-attributes);
+  --color-edge-idea: var(--edge-idea);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+* {
+  border-color: var(--line);
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+}
+
+::selection {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .motion-safe-transition {
+    transition-duration: 200ms;
+  }
+}
