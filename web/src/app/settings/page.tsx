@@ -11,9 +11,11 @@
  * not happened.
  */
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useStore } from "@/data/store";
-import { Panel } from "@/components/primitives";
+import { Confidence, Empty, Panel } from "@/components/primitives";
+import { bestGuess } from "@/lib/bookGuess";
+import type { DiscoveredFile } from "@/data/types";
 
 const FOLDERS = ["OneDrive/Books", "OneDrive/Documents/Library", "OneDrive/Reading/PDFs"];
 
@@ -22,6 +24,11 @@ export default function SettingsPage() {
   const { connection } = data;
   const [connecting, setConnecting] = useState(false);
   const [folder, setFolder] = useState(connection.library_folder);
+  // Lifted out of the row: resolving a discovered file removes it from
+  // `data.discovered`, which unmounts its row before a message stored on that
+  // row could ever be seen. AddBookDialog's "existing" tab has the same shape
+  // for the same reason.
+  const [justAdded, setJustAdded] = useState<string | null>(null);
 
   function connect() {
     setConnecting(true);
@@ -131,6 +138,36 @@ export default function SettingsPage() {
         </p>
       </Panel>
 
+      {/* ---------------------------------------------- discovered files (SUP-14) */}
+      <Panel
+        eyebrow="Sync"
+        title={
+          data.discovered.length === 0
+            ? "Nothing new since last sync"
+            : `${data.discovered.length} new file${data.discovered.length === 1 ? "" : "s"} found — not yet a book`
+        }
+      >
+        <p className="mb-3 text-sm text-muted">
+          When sync finds a PDF that doesn&apos;t match anything on your shelf, it no longer
+          does nothing: it reads the first few pages for a title, author and year, falls back
+          to the file name when that fails, and asks you to confirm before creating the book.
+        </p>
+        {justAdded && (
+          <p className="traced mb-3 rounded p-2 text-sm" style={{ color: "var(--color-cites)" }}>
+            {justAdded} is now on your shelf.
+          </p>
+        )}
+        {data.discovered.length === 0 ? (
+          <Empty>Every file in {data.connection.library_folder} matches a book you own.</Empty>
+        ) : (
+          <div className="divide-y divide-line">
+            {data.discovered.map((file) => (
+              <DiscoveredRow key={file.id} file={file} onAdded={setJustAdded} />
+            ))}
+          </div>
+        )}
+      </Panel>
+
       {/* ------------------------------------------------------ library folder */}
       <Panel eyebrow="Library" title="Location">
         <p className="mb-3 text-sm text-muted">
@@ -217,5 +254,85 @@ function Row({ label, value, mono }: { label: string; value: string; mono?: bool
         {value}
       </dd>
     </>
+  );
+}
+
+/** One sync-discovered file: a pre-filled, editable guess and a confirm/reject pair. */
+function DiscoveredRow({
+  file,
+  onAdded,
+}: {
+  file: DiscoveredFile;
+  onAdded: (title: string) => void;
+}) {
+  const { resolveDiscovered, dismissDiscovered } = useStore();
+  const guess = useMemo(() => bestGuess(file), [file]);
+  const [title, setTitle] = useState(guess.title);
+  const [author, setAuthor] = useState(guess.author);
+  const [year, setYear] = useState(guess.year ? String(guess.year) : "");
+
+  return (
+    <div className="py-3">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <p className="truncate font-mono text-[0.6875rem] text-dim" title={file.file_path}>
+          {file.file_path}
+        </p>
+        <span className="inline-flex items-center gap-2 font-mono text-[0.625rem] text-dim uppercase">
+          {guess.source === "content" ? "guessed from the text" : "guessed from the filename"}
+          <Confidence level={guess.confidence} />
+        </span>
+      </div>
+      {!file.scanned_text && (
+        <p className="mt-1 text-[0.625rem] text-dim">
+          Couldn&apos;t read text from this file — likely a scanned/image PDF, handled
+          separately (see Formats below). Guess is filename-only; check it before adding.
+        </p>
+      )}
+      <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-[1fr_1fr_5.5rem]">
+        <input
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Title"
+          className="rounded-md border border-line bg-void/60 px-2.5 py-1.5 text-sm text-paper outline-none focus:border-cites"
+        />
+        <input
+          value={author}
+          onChange={(e) => setAuthor(e.target.value)}
+          placeholder="Author"
+          className="rounded-md border border-line bg-void/60 px-2.5 py-1.5 text-sm text-paper outline-none focus:border-cites"
+        />
+        <input
+          value={year}
+          onChange={(e) => setYear(e.target.value)}
+          placeholder="Year"
+          className="rounded-md border border-line bg-void/60 px-2.5 py-1.5 text-sm text-paper outline-none focus:border-cites"
+        />
+      </div>
+      <div className="mt-2 flex gap-2">
+        <button
+          type="button"
+          disabled={!title.trim()}
+          onClick={() => {
+            resolveDiscovered(file.id, {
+              title,
+              author,
+              year: Number(year) || new Date().getFullYear(),
+              pages: 300,
+            });
+            onAdded(title || "The book");
+          }}
+          className="cursor-pointer rounded-md border border-line-bright px-2.5 py-1 font-mono text-[0.625rem] uppercase hover:border-cites hover:text-cites disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          Add to library
+        </button>
+        <button
+          type="button"
+          onClick={() => dismissDiscovered(file.id)}
+          className="cursor-pointer rounded-md border border-line px-2.5 py-1 font-mono text-[0.625rem] text-dim uppercase hover:border-idea hover:text-idea"
+        >
+          Not a book
+        </button>
+      </div>
+    </div>
   );
 }
