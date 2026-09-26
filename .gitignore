@@ -21,9 +21,11 @@ build/
 infra/**/.terraform/
 infra/**/*.tfstate
 infra/**/*.tfstate.*
-infra/**/.terraform.lock.hcl
 infra/**/*.tfvars
 !infra/**/*.tfvars.example
+infra/**/*_override.tf
+# .terraform.lock.hcl is intentionally NOT ignored — committed for
+# reproducible provider versions across machines.
 
 # Editors / OS
 .vscode/
