@@ -125,6 +125,14 @@ export const fixtures: LibraryData = {
       aliases: ["Gladwell, M."],
       openlibrary_author_id: "OL23919A",
     },
+    {
+      // Freshly imported via the OneDrive pickup pipeline — not part of the
+      // Kahneman cluster, and no OpenLibrary lookup has run yet.
+      id: "a-mccraw",
+      name: "Thomas K. McCraw",
+      aliases: ["McCraw, T. K.", "McCraw"],
+      openlibrary_author_id: null,
+    },
   ],
 
   works: [
@@ -324,6 +332,23 @@ export const fixtures: LibraryData = {
       unresolved: true,
       cover: { hue: 356, glyph: "BL" },
     },
+
+    // ---- Freshly imported, outside the Kahneman cluster ----
+    {
+      // Landed via book-pickup/scan_books.sh straight into Notes/ — title and
+      // author are certain (it's the user's own file), OpenLibrary just hasn't
+      // been queried yet.
+      id: "w-prophet",
+      title: "Prophet of Innovation",
+      subtitle: "Joseph Schumpeter and Creative Destruction",
+      normalized_title: norm("Prophet of Innovation"),
+      author_ids: ["a-mccraw"],
+      year: 2007,
+      kind: "book",
+      openlibrary_work_id: null,
+      isbn13: null,
+      cover: { hue: 54, glyph: "SC" },
+    },
   ],
 
   copies: [
@@ -407,6 +432,16 @@ export const fixtures: LibraryData = {
       reading_state: "unread",
       last_opened_page: null,
     },
+    {
+      id: "c-prophet",
+      work_id: "w-prophet",
+      file_format: "pdf",
+      file_path: "Books/McCraw - Prophet of Innovation.pdf",
+      pages: 719,
+      added_at: "2026-09-25T21:18:00Z",
+      reading_state: "unread",
+      last_opened_page: null,
+    },
   ],
 
   tags: [
@@ -420,6 +455,8 @@ export const fixtures: LibraryData = {
     { id: "t-reread", name: "re-read" },
     { id: "t-teaching", name: "teaching" },
     { id: "t-unfinished", name: "unfinished" },
+    // Marks a note produced by book-pickup/scan_books.sh rather than typed by hand.
+    { id: "t-imported", name: "imported" },
   ],
 
   concepts: [
@@ -807,6 +844,101 @@ Lewis is also good on how late [[System 1 / System 2]] arrived: the labels are a
       concept_ids: ["k-prospect", "k-system12"],
     },
     {
+      // The real output of book-pickup/scan_books.sh, landed in
+      // Notes/the-undoing-project-michael-lewis.md — kept verbatim (minus the
+      // title/author/source-file header, which the book detail page already
+      // shows) so this doubles as a fixture for how an auto-imported note
+      // actually reads, not a hand-tuned stand-in for it.
+      id: "n-undoing-imported",
+      copy_id: "c-undoing",
+      title: "Imported reading notes",
+      body: `## Summary
+
+Michael Lewis frames the book as the missing intellectual backstory to his own *Moneyball*: the discovery, by two Israeli psychologists, that expert human judgment is systematically — not randomly — flawed, and that this flaw can be studied, modeled, and even corrected. The book traces the lives of Daniel "Danny" Kahneman, a Jewish child who survived the Nazi occupation of France and grew into a self-doubting, endlessly curious psychologist, and Amos Tversky, a fearless, logic-driven Israeli paratrooper-turned-mathematical-psychologist who radiated certainty. The two men, initially wary rivals at Hebrew University, "collided" in 1969 when Kahneman invited Tversky to guest-lecture in his seminar, and from that meeting grew one of the most productive scientific partnerships of the twentieth century — a nearly telepathic collaboration in which neither could later say which of them had originated a given idea.
+
+Working first on how people generate random sequences and estimate probabilities, then on the broader question of how the mind makes judgments and decisions under uncertainty, Kahneman and Tversky identified a set of mental shortcuts — "heuristics" such as representativeness, availability, and anchoring — that generally work well but produce predictable, systematic errors (biases). Their 1974 *Science* paper "Judgment Under Uncertainty: Heuristics and Biases" became one of the most cited papers in the social sciences and effectively founded behavioral economics. They went on to develop "prospect theory" (1979), a mathematically rigorous alternative to expected-utility theory that explained how people actually evaluate gains and losses relative to a reference point, exhibiting "loss aversion" (losses hurt roughly twice as much as equivalent gains please) and reversing their risk preferences depending on how a choice is "framed."
+
+Lewis follows the practical afterlife of these ideas: their adoption by economist Richard Thaler (who used prospect theory to explain his growing list of "anomalies" that rational-agent economics couldn't account for), by Israeli Air Force flight instructors and Kahneman's own consulting for the military, by physicians like Don Redelmeier fighting cognitive bias in diagnosis, by NBA executive Daryl Morey applying the lessons to talent evaluation, and eventually by policymakers such as Cass Sunstein. Threaded through the intellectual history is the personal story of Kahneman and Tversky's friendship — its extraordinary intimacy and productivity, and its slow fracture as Tversky's fame outstripped Kahneman's and credit became a source of pain. Kahneman moved on, in his final years working with Tversky, to a theory of "undoing" — how the mind constructs counterfactual, "if only" alternatives to reality, especially after tragedy or surprise.
+
+The book closes with Tversky's diagnosis of terminal melanoma in 1996, the brief reconciliation this forced with Kahneman, and Tversky's death — followed six years later by Kahneman's winning the Nobel Prize in Economics (2002) for work he had done jointly with a man no longer alive to share it, since the prize cannot be awarded posthumously. Lewis presents their friendship, and its "undoing," as inseparable from the psychology of undoing that Kahneman had been developing at the very end of their collaboration.
+
+## Key Concepts
+
+1. **Representativeness Heuristic** — People judge probability by how closely something resembles a mental prototype ("parent population") rather than by calculating actual statistical likelihood. This explains errors like believing an "unrepresentative" birth-order sequence (BBBBBG) is less likely than a "representative" one (GBGBBG) even though both are equally probable, since we mistake resemblance for likelihood.
+   > "Our thesis," they wrote, "is that, in many situations, an event A is judged to be more probable than an event B whenever A appears more representative than B." (Ch. 8, Going Viral)
+
+2. **Availability Heuristic** — People estimate the frequency or probability of an event by how easily examples of it come to mind, which is distorted by memorability, recency, and vividness rather than true frequency. This is why famous names or vivid disasters skew our sense of what's common.
+   > "Consequently," Amos and Danny wrote, "the use of the availability heuristic leads to systematic biases." Human judgment was distorted by . . . the memorable. (Ch. 8, Going Viral)
+
+3. **Anchoring and Adjustment** — An initial number or reference point, even one known to be arbitrary or irrelevant, pulls subsequent numerical estimates toward it. Kahneman and Tversky demonstrated this with a spinning "wheel of fortune" that biased people's guesses about the percentage of African nations in the UN.
+   > "The people who spun a higher number on the wheel tended to guess that a higher percentage of the United Nations consisted of African countries than did those for whom the needle landed on a lower number." (Ch. 8, Going Viral)
+
+4. **Base-Rate Neglect** — People underweight or ignore the known statistical prevalence (base rate) of something in a population when given specific, if worthless, descriptive evidence about an individual case, even though a Bayesian calculation would weight the base rate heavily. The "engineers and lawyers" experiment with "Dick" showed people abandoning correct base rates the moment they were handed vivid but uninformative details.
+   > "Evidently, people respond differently when given no specific evidence and when given worthless evidence," wrote Danny and Amos. "When no specific evidence is given, the prior probabilities are properly utilized; when worthless specific evidence is given, prior probabilities are ignored." (Ch. 7, The Rules of Prediction)
+
+5. **Regression to the Mean** — Extreme performances (very good or very bad) tend to be followed by more average ones purely as a statistical artifact, not because of any causal effect of praise or punishment. Kahneman diagnosed this while consulting for the Israeli Air Force, where flight instructors wrongly concluded that praise hurt performance and criticism helped it.
+   > "Because we tend to reward others when they do well and punish them when they do badly, and because there is regression to the mean," Danny later wrote, "it is part of the human condition that we are statistically punished for rewarding others and rewarded for punishing them." (Ch. 4, Errors)
+
+6. **Hindsight Bias** — After an outcome is known, people misremember having predicted it with much greater confidence than they actually had, making the past look more predictable than it was. Baruch Fischhoff (Tversky's graduate student) demonstrated this using people's recalled odds for outcomes of Nixon's trips to China and Russia.
+   > "They all believed that they had assigned higher probabilities to what happened than they actually had. They greatly overestimated the odds that they had assigned to what had actually happened." (Ch. 8, Going Viral)
+
+7. **Prospect Theory / Loss Aversion** — People evaluate outcomes as gains or losses relative to a psychological reference point, not as absolute end-states, and losses are felt roughly twice as painfully as equivalent gains are felt pleasurably — making people risk-averse for gains but risk-seeking for losses. This replaced expected-utility theory as a more accurate descriptive model of choice under risk.
+   > "For most people, the happiness involved in receiving a desirable object is smaller than the unhappiness involved in losing the same object." (Ch. 10, The Isolation Effect)
+
+8. **Framing Effect** — Logically identical choices trigger different preferences depending on whether they are described (framed) in terms of gains or losses; the famous "Asian Disease Problem" showed majorities flipping their preferred policy purely because of how survival vs. death statistics were worded.
+   > "People did not choose between things. They chose between descriptions of things." (Ch. 11, The Rules of Undoing)
+
+9. **The Endowment Effect** — People assign extra value to things merely because they own them, making them irrationally reluctant to trade or sell possessions even when doing so would be economically advantageous — a phenomenon economist Richard Thaler named after encountering prospect theory.
+   > "When you start looking for the endowment effect," Thaler said, "you see it everywhere." (Ch. 11, The Rules of Undoing)
+
+10. **The Undoing Project (Counterfactual "Undoing" and the Downhill Rule)** — Late in his career, Kahneman studied how the mind spontaneously constructs counterfactual alternatives to a bad outcome, preferentially "undoing" whatever felt most surprising or unusual about the event rather than the most probabilistically effective point of intervention; the mind finds it easier to travel from the unusual back to the usual than the reverse.
+    > "The mind also preferred to go downhill when it was engaged in undoing. 'The Downhill Rule,' Danny called this." (Ch. 12, This Cloud of Possibility)
+
+## Extracts & Quotes
+
+1. "Doubt is not a pleasant condition, but certainty is an absurd one." — Voltaire, the book's epigraph, sets up its central theme of overconfidence in judgment.
+   > "Doubt is not a pleasant condition, but certainty is an absurd one." —Voltaire
+
+2. On the origin of Kahneman and Tversky's partnership, capturing how thoroughly merged their thinking became — a striking claim about genuine intellectual fusion rather than mere collaboration.
+   > "It was seldom possible for Amos and Danny to recall where their ideas had come from. They both found it pointless to allocate credit, as their thoughts felt like some alchemical by-product of their interaction."
+
+3. Kahneman's memory of the night his father died while in hiding from the Nazis, a formative moment of loss and premature responsibility that shaped his lifelong preoccupation with fragility and human error.
+   > "He told me I might have to become responsible," recalled Danny. "He told me to think of myself as the man of the family... And he gave them to him. And he died that night."
+
+4. Amos's blunt reply defending psychology's right to describe irrational behavior without being accused of endorsing it — a concise statement of the book's core methodological stance.
+   > "A theory of vision cannot be faulted for predicting optical illusions. Similarly, a descriptive theory of choice cannot be rejected on the grounds that it predicts 'irrational behavior' if the behavior in question is, in fact, observed."
+
+5. Richard Thaler's epiphany on discovering Kahneman and Tversky's work, illustrating how their ideas single-handedly launched behavioral economics as a field.
+   > "I have vivid memories of running from one article to another," says Thaler. "As if I have discovered the secret pot of gold... Then I realized: They had one idea. Which was systematic bias."
+
+6. The naming of "Prospect Theory," chosen deliberately for its blankness so the idea could not be pre-judged by association with existing terms — a small but telling detail about how they marketed a scientific idea.
+   > "The idea was to give the theory a completely distinct name that would have no associations whatsoever," said Danny. "When you say 'prospect theory,' no one knows what you're talking about."
+
+7. Amos's biting assessment of Danny's need for institutional recognition, delivered just before the rupture in their friendship — a moment that crystallizes the imbalance of temperament between the two men.
+   > Amos looked at Danny and said, "Other people might be impressed but I am not."
+
+8. The devastating twist immediately following Kahneman's declaration that he and Tversky were "no longer even friends," when Tversky calls with his cancer diagnosis just three days later.
+   > "Three days later Amos called Danny. He'd just received some news. A growth that doctors had discovered in his eye had just been diagnosed as malignant melanoma."
+
+9. Tversky's stoic reflection on mortality shortly after learning he had six months to live, revealing the same fearless, logic-first temperament that defined his scientific work.
+   > "He said, 'Life is a book. The fact that it was a short book doesn't mean it wasn't a good book. It was a very good book.'"
+
+10. Tversky's dry response upon learning he was a Nobel Prize finalist while dying — the prize being awarded only to the living — showing his characteristic composure in the face of the news.
+    > "I thank you very much for letting me know," she heard Amos say. "I can assure you that the Nobel Prize is not on the list of things I'm going to miss."
+
+11. Peter Diamond's testimony to how thoroughly the Kahneman-Tversky research program reshaped economics from the outside in, describing years spent trying to operationalize their insight.
+    > "I became a believer," said Nobel Prize–winning economist Peter Diamond of Danny and Amos's work. "It's all true. This stuff is not just lab stuff. It's capturing reality, and it's important to economists."
+
+12. Don Redelmeier's summary of what he considered Amos Tversky's deepest lesson about human fallibility, tying the book's abstract psychology back to concrete, life-and-death stakes like drunk or distracted driving.
+    > "It's not that people think they are perfect. No, no: They can make mistakes. It's that they don't appreciate the extent to which they are fallible."`,
+      page_ref: null,
+      highlight_id: null,
+      created_at: "2026-09-25T21:17:00Z",
+      updated_at: "2026-09-25T21:17:00Z",
+      tag_ids: ["t-imported"],
+      concept_ids: [],
+    },
+    {
       id: "n-range-1",
       copy_id: "c-range",
       title: "Kind vs. wicked is the load-bearing distinction",
@@ -859,6 +991,99 @@ Notable: superforecasters use the [[Outside view]] as a habit and correct for [[
       updated_at: "2026-07-01T07:10:00Z",
       tag_ids: ["t-behec", "t-unfinished"],
       concept_ids: ["k-mental-accounting"],
+    },
+    {
+      // Also a straight import from book-pickup/scan_books.sh — this book has
+      // no relationship to the Kahneman cluster, which is the point: it shows
+      // up here on its own, not because it was wedged into the demo graph.
+      id: "n-prophet-1",
+      copy_id: "c-prophet",
+      title: "Imported reading notes",
+      body: `## Summary
+
+McCraw's biography has, as he puts it, "two protagonists: Joseph Alois Schumpeter (1883–1950) and the phenomenon of capitalist innovation." The book is organized in three parts that track both Schumpeter's life and a sequence of intellectual shifts: Part I ("L'Enfant Terrible," 1883–1926) follows the orphaned boy from provincial Moravia to a stepfather's noble title, elite Viennese schooling, and a meteoric academic and public career — culminating in his brilliant early book *The Theory of Economic Development* and a disastrous stint as Austria's finance minister and then a banker, whose failure wiped out the fortune he had built. Part II ("The Adult," 1926–1939) covers the crushing personal losses of 1926 (his mother, his young wife Annie, and their newborn son all died within weeks), his shift to Bonn and then Harvard, and his growing focus on capitalism as a social and institutional system rather than pure economic theory. Part III ("The Sage," 1939–1950) covers his American career at Harvard, the writing of his three major works of this period — *Business Cycles* (1939), *Capitalism, Socialism and Democracy* (1942), and the posthumously published *History of Economic Analysis* (1954) — and his sense of being permanently overshadowed by Keynes.
+
+McCraw's central argument is that Schumpeter's thought fused into modern management and economic vocabulary more thoroughly than that of almost any other economist: entrepreneurship, innovation, business strategy, and "creative destruction" are, McCraw contends, largely his legacy. Schumpeter is presented as a rival to Marx (whom he respected but thought empirically wrong) and to Keynes (whose *General Theory* Schumpeter felt eclipsed his own less readable, more historically freighted work, and whose aggregate "macroeconomics" he thought erased the entrepreneur and firm — the actual engines of capitalist change — from the picture).
+
+A recurring thread is Schumpeter's personal volatility: a man of extraordinary charm, vanity, and productivity, haunted by depression, sustained across his life by a trio of women (his mother Johanna, his young wife Annie, and his final wife and posthumous editor Elizabeth Boody). McCraw treats Schumpeter's intellectual "vision" — his belief that capitalism is inherently unstable, driven by waves of innovation that destroy old firms and industries even as they raise living standards — as inseparable from his personal experience of upheaval, reinvention, and loss.
+
+McCraw also stresses the deep ambivalence in Schumpeter's mature thought: in *Capitalism, Socialism and Democracy* he argues capitalism is economically triumphant yet sociologically self-undermining — its very success bureaucratizes innovation, erodes the bourgeois class that defends it, and cultivates intellectuals hostile to it — so that it might eventually evolve into some form of socialism, not through economic failure but through cultural exhaustion. The Epilogue argues that Schumpeter's stock has risen steadily since his death, as globalization, Silicon Valley-style entrepreneurship, and the language of "business strategy" and "creative destruction" have become the default vocabulary for describing capitalism.
+
+## Key Concepts
+
+1. **Creative Destruction** — Schumpeter's signature term, first used in 1942, for the process by which innovative products, firms, and methods continually destroy and replace older ones; McCraw treats it as the organizing idea of the whole book and the essence of Schumpeter's view of capitalism as inherently unstable rather than equilibrium-seeking.
+   > "Creative destruction is the essential fact about capitalism," he wrote. "Stabilized capitalism is a contradiction in terms."
+
+2. **The Entrepreneur as "Pivot"** — Schumpeter's entrepreneur is not a manager or owner but a distinct psychological type driven to create "new combinations," someone who bears no direct financial risk (that falls on the creditor/banker) but who displaces incumbents through the sheer force of innovation. McCraw presents this concept as Schumpeter's most durable contribution to business thought, later embraced by business schools worldwide.
+   > "The entrepreneur, Schumpeter once wrote, is 'the pivot on which everything turns.' Entrepreneurs—whether they operate in big firms or small ones, old companies or startups—are the agents of innovation and creative destruction."
+
+3. **The Five Types of Innovation ("New Combinations")** — In *The Theory of Economic Development* (1911), Schumpeter formally enumerated the forms an entrepreneurial act can take: new goods, new production methods, new markets, new sources of supply, and new industrial organization. McCraw calls this list foundational, noting it has been "quoted many times by economists, historians, and others studying the anatomy of innovation" even though its individual elements now seem like conventional wisdom.
+   > "(1) The introduction of a new good... (2) The introduction of a new method of production... (3) The opening of a new market... (4) The conquest of a new source of supply of raw materials or half-manufactured goods... (5) The carrying out of the new organization of any industry..." (Ch. 5, "Career Takeoff")
+
+4. **Credit and the Money Market as "Headquarters of the Capitalist System"** — Schumpeter argued that entrepreneurship depends on credit created "out of nothing" by banks and investment bankers betting on future output, not on prior thrift; this reframes capitalism as fundamentally future-oriented. McCraw treats this as an underappreciated but essential piece of Schumpeter's system, distinguishing his theory of capital from classical economics.
+   > "'The headquarters of the capitalist system,' says Schumpeter, is the money market—the place where credit is allocated... The investment banker is not just a middleman standing between savers and users of capital; he is instead 'a producer' of money and credit, 'the capitalist par excellence.'" (Ch. 5, "Career Takeoff")
+
+5. **The Perennial Gale of Creative Destruction (Business Strategy)** — In *Capitalism, Socialism and Democracy*, Schumpeter argues that firms cannot be understood as static structures but only as attempts to survive amid constant upheaval; McCraw credits this passage with essentially founding the modern discipline of "business strategy" taught in business schools.
+   > "Every piece of business strategy acquires its true significance only against the background of that process and within the situation created by it... [it] must be seen in its role in the perennial gale of creative destruction; it cannot be understood irrespective of it or, in fact, on the hypothesis that there is a perennial lull." (Ch. 21, "Capitalism, Socialism and Democracy")
+
+6. **"Can Capitalism Survive? No, I Do Not Think That It Can."** — Schumpeter's deliberately provocative and heavily hedged thesis that capitalism's economic success will erode its own social and cultural foundations (bureaucratizing innovation, dissolving the bourgeoisie's political defenders, and feeding a class of hostile intellectuals), leading toward some form of socialism — not because capitalism fails economically but because it succeeds too well. McCraw frames this as the most misunderstood and most quoted argument in Schumpeter's whole body of work.
+   > "Turning from the simplicity and purported certainty of Marx's economic utopia, Schumpeter poses his own deceptively guileless question and answer: 'Can capitalism survive? No. I do not think that it can.'" (Ch. 21, "Capitalism, Socialism and Democracy")
+
+7. **Schumpeter vs. Keynes** — McCraw stages Schumpeter's rivalry with Keynes as one of the book's central intellectual dramas: Keynes's aggregate "macroeconomics" ignored the individual entrepreneur and firm, which for Schumpeter were capitalism's actual engine, and Schumpeter believed *The General Theory* had eclipsed his own less accessible *Business Cycles* despite being analytically inferior on the question of growth and innovation.
+   > "In Keynesian and other macroeconomic models, individual entrepreneurs, companies, and industries simply vanish from the scene. Very tellingly, no mention of a single business firm can be found in the entire 403 pages of The General Theory." (Ch. 16, "Letters from Europe")
+
+8. **The Three-Cycle ("Juglar/Kondratieff/Kitchin") Business Cycle Schema** — In *Business Cycles* (1939), Schumpeter tried to fit historical booms and busts into nested, quasi-regular wave patterns of different lengths, an ambitious but widely criticized attempt at "exact economics"; McCraw uses this to illustrate Schumpeter's unresolved tension between rigorous theory and messy historical fact.
+   > "'Barring very few cases in which difficulties arise,' he writes, 'it is possible to count off, historically as well as statistically, six Juglars [8–10 year cycles] to a Kondratieff [50–60 years] and three Kitchins [40 months] to a Juglar—not as an average but in every individual case.'" (Ch. 15, "Business Cycles, Business History")
+
+9. **"Vision"** — Schumpeter's own term (later borrowed by historians of economic thought) for the pre-analytic, ideologically shaped intuition that underlies even the most rigorous economic theorizing; McCraw shows Schumpeter applying it critically to Marx and Keynes while claiming, not fully successfully in McCraw's telling, that he himself could rise above it as a "value-neutral social scientist."
+   > "He believed, for example, that Karl Marx had been profoundly correct on many issues but wrong on others because of an unyielding ideology—or, as Schumpeter came to call it, 'vision.' He made the same kind of judgment about John Maynard Keynes, his own contemporary." (Prologue, "Who He Was and What He Did")
+
+10. **Big Business as an Engine of Progress, Not Monopoly** — Against the dominant American suspicion of "big business" as synonymous with harmful monopoly, Schumpeter argued in *Capitalism, Socialism and Democracy* that large enterprise, driven by creative destruction rather than static market power, had done more than small firms to raise living standards; McCraw presents this as Schumpeter's deliberately contrarian corrective to New Deal-era antitrust thinking.
+    > "These units," he says in Capitalism, Socialism and Democracy, "not only arise in the process of creative destruction and function in a way entirely different from the static schema" but often actually make their own markets: "They largely create what they exploit." (Ch. 21, "Capitalism, Socialism and Democracy")
+
+## Extracts & Quotes
+
+1. On capitalism's core mechanism raising ordinary living standards, not luxury for the rich — a passage McCraw quotes at length in the Prologue to establish Schumpeter's populist case for capitalism:
+   > "It is the cheap cloth, the cheap cotton and rayon fabric, boots, motorcars and so on that are the typical achievement of capitalist production, and not as a rule improvements that would mean much to the rich man... the capitalist process, not by coincidence but by virtue of its mechanism, progressively raises the standard of life of the masses."
+
+2. Schumpeter's own wry deflation of the profit motive's romance, showing McCraw's insistence that Schumpeter never lost his ironic self-awareness about capitalism's moral ambiguity:
+   > "The stock exchange is a poor substitute for the Holy Grail."
+
+3. A diary line McCraw uses to show Schumpeter's private cynicism about the pervasiveness of commerce:
+   > "I often wonder," Schumpeter wrote in his diary, "if there is any cause that ever arose and had success that was not business for somebody."
+
+4. Schumpeter's playful, self-mocking account of his own ambitions, illustrating McCraw's portrait of his flamboyant personality:
+   > "Then came his punch line: things were not going well with the horses."
+
+5. On his mother Johanna as an entrepreneurial force in her own life, a formative influence McCraw draws a direct line from to his later economic theory:
+   > "In the broad sense of the word 'entrepreneur,' Johanna was one of the most effective her son ever knew. She fit the type perfectly."
+
+6. Schumpeter's grief-stricken letter after the triple loss of his mother, wife Annie, and newborn son within weeks in 1926 — the personal catastrophe McCraw treats as a hinge point in the biography:
+   > "My beloved Annie is no more . . . Everything looks so grim now that I do not care what happens . . . I may have deserved much, but this, no."
+
+7. Schumpeter's own assessment of his rivalry with Keynes, conceding Keynes's superior gift for popularization despite Schumpeter's broader erudition, and his sharp dismissal of Keynesian aggregates as a substitute for real theory:
+   > "On the other hand, Keynes had a real genius for persuasive simplification... As Schumpeter later said of the kind of analysis at which Keynes excelled, 'We always put, against the heavy sacrifices it entails, its one great virtue, Simplification.'... Schumpeter once wrote to a former student of his, 'My model [of entrepreneurship] may seem fuzzy and difficult to handle mathematically but it is real and you can see it. The Keynesian determinants (so-called) are a paper screen interposed between the student and reality.'"
+
+8. Jacob Viner's contemporary complaint about Keynes's terminology, quoted by McCraw to show that Schumpeter was far from alone in his skepticism of *The General Theory*:
+   > "no old term for an old concept is used when a new one can be coined, and if old terms are used new meanings are generally assigned to them."
+
+9. Schumpeter's diary explanation for why Americans distrust big business, revealing (per McCraw) a characteristically sharp psychological insight beneath his economic analysis:
+   > "American opinion is so anti big business precisely because big business has made the country what it now is and in doing so it has set the secret standard of the American soul: who is not part of big bus., feels he does not meet the standard and by compensation turns against it."
+
+10. Schumpeter's account of capitalism's corrosive rationalizing effect on its own legitimacy, part of the "seeds of its own destruction" argument in *Capitalism, Socialism and Democracy*:
+    > "[Capitalism] 'rationalizes' people's habits of thought. It 'creates a critical frame of mind which, after having destroyed the moral authority of so many other institutions, in the end turns against its own.'"
+
+11. Wassily Leontief's memorial tribute, which McCraw uses to close the biographical narrative and capture Schumpeter's paradoxical character:
+    > "A pessimist and a skeptic in his view on the future of our western civilization which he cherished so much, Schumpeter was an optimist in his belief in the boundless progress of the inquiring mind."
+
+12. Schumpeter's own last diary entries before his death, quoted by McCraw to convey both his continued devotion to work and his private exhaustion:
+    > "Professorship the second semester was terrific. It is true that teaching gives me joy... It is not the less true that in the last years it has become different . . . My belief in the world's values and sense of things dies."`,
+      page_ref: null,
+      highlight_id: null,
+      created_at: "2026-09-25T21:18:00Z",
+      updated_at: "2026-09-25T21:18:00Z",
+      tag_ids: ["t-imported"],
+      concept_ids: [],
     },
   ],
 
