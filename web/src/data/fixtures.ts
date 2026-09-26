@@ -1008,6 +1008,36 @@ Notable: superforecasters use the [[Outside view]] as a habit and correct for [[
     library_folder: "OneDrive/Books",
     last_sync: "2026-09-24T07:12:00Z",
   },
+
+  /**
+   * SUP-14 — files the last sync found in the library folder that don't match
+   * any Work. Three cases on purpose, because a real scan fails the same
+   * three ways: a clean "Author - Title" filename (title and author, no
+   * year), a messy filename rescued by the first-page text (all three
+   * fields), and a scanned/image PDF where there is no text to read at all
+   * (low-confidence filename guess, same caveat as the Settings format note).
+   */
+  discovered: [
+    {
+      id: "df-risk-savvy",
+      file_path: "OneDrive/Books/Gigerenzer - Risk Savvy.pdf",
+      scanned_text: null,
+      found_at: "2026-09-24T07:12:00Z",
+    },
+    {
+      id: "df-signal-noise",
+      file_path: "OneDrive/Books/scan_2026-09-18_0043.pdf",
+      scanned_text:
+        "THE SIGNAL AND THE NOISE\nWhy So Many Predictions Fail—but Some Don't\nby Nate Silver\nPenguin Press, New York, 2012",
+      found_at: "2026-09-24T07:12:00Z",
+    },
+    {
+      id: "df-unscanned",
+      file_path: "OneDrive/Books/IMG_20260803_0091.pdf",
+      scanned_text: null,
+      found_at: "2026-09-24T07:12:00Z",
+    },
+  ],
 };
 
 type Target = { work: string } | { author: string } | { concept: string };

@@ -20,7 +20,7 @@ import {
   type ReactNode,
 } from "react";
 import { fixtures } from "./fixtures";
-import type { LibraryData, Note } from "./types";
+import type { Highlight, LibraryData, Note } from "./types";
 import { extractConceptLinks } from "@/lib/concepts";
 
 export { extractConceptLinks };
@@ -45,6 +45,14 @@ interface StoreValue {
   restoreEdge: (edgeId: string) => void;
   addToLibrary: (workId: string) => string | null;
   addNewBook: (input: { title: string; author: string; year: number; pages: number }) => string;
+  /** SUP-14 — confirms a sync-discovered file as a new book: creates the Work
+   *  and its Copy (at the file's real path) and drops the file from the queue. */
+  resolveDiscovered: (
+    fileId: string,
+    input: { title: string; author: string; year: number; pages: number },
+  ) => string | null;
+  /** "Not a book" — drops the file from the queue without creating anything. */
+  dismissDiscovered: (fileId: string) => void;
   saveNote: (input: {
     noteId?: string;
     copyId: string;
@@ -52,8 +60,12 @@ interface StoreValue {
     body: string;
     pageRef: number | null;
     tagIds: string[];
+    /** Omit to leave an existing note's link untouched; pass null to clear it. */
+    highlightId?: string | null;
   }) => string;
   deleteNote: (noteId: string) => void;
+  /** The reader's quick-highlight action — a Highlight row with no remark and no Note. */
+  createHighlight: (copyId: string, page: number, text: string) => string;
   createConcept: (name: string, originatingWorkId: string | null) => string;
   createTag: (name: string) => string;
   setConnection: (patch: Partial<LibraryData["connection"]>) => void;
@@ -202,6 +214,79 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     [],
   );
 
+  /** SUP-14 — same shape as addNewBook, but the Copy's file_path is the file's
+   *  real location rather than a fabricated one, and the source file leaves the queue. */
+  const resolveDiscovered = useCallback(
+    (
+      fileId: string,
+      { title, author, year, pages }: { title: string; author: string; year: number; pages: number },
+    ) => {
+      const workId = `w-${slug(title)}-${Date.now().toString(36).slice(-4)}`;
+      let created: string | null = null;
+      setData((prev) => {
+        const file = prev.discovered.find((f) => f.id === fileId);
+        if (!file) return prev;
+        created = workId;
+
+        const trimmedAuthor = author.trim();
+        const existingAuthor = trimmedAuthor
+          ? prev.authors.find((a) => a.name.toLowerCase() === trimmedAuthor.toLowerCase())
+          : undefined;
+        const authorId = existingAuthor?.id ?? (trimmedAuthor ? `a-${slug(trimmedAuthor)}` : null);
+        const authors =
+          existingAuthor || !trimmedAuthor
+            ? prev.authors
+            : [
+                ...prev.authors,
+                { id: authorId!, name: trimmedAuthor, aliases: [], openlibrary_author_id: null },
+              ];
+
+        return {
+          ...prev,
+          authors,
+          works: [
+            ...prev.works,
+            {
+              id: workId,
+              title: title.trim(),
+              normalized_title: normalize(title),
+              author_ids: authorId ? [authorId] : [],
+              year,
+              kind: "book" as const,
+              openlibrary_work_id: null,
+              isbn13: null,
+              unresolved: true,
+              cover: { hue: Math.abs(hash(title)) % 360, glyph: initials(title) },
+            },
+          ],
+          copies: [
+            ...prev.copies,
+            {
+              id: `c-${slug(title)}`,
+              work_id: workId,
+              file_format: "pdf" as const,
+              file_path: file.file_path,
+              pages,
+              added_at: new Date().toISOString(),
+              reading_state: "unread" as const,
+              last_opened_page: null,
+            },
+          ],
+          discovered: prev.discovered.filter((f) => f.id !== fileId),
+        };
+      });
+      return created;
+    },
+    [],
+  );
+
+  const dismissDiscovered = useCallback((fileId: string) => {
+    setData((prev) => ({
+      ...prev,
+      discovered: prev.discovered.filter((f) => f.id !== fileId),
+    }));
+  }, []);
+
   /**
    * Saves a note and re-derives its NoteConcept rows from the `[[…]]` links in
    * the body, so the concepts browser and the graph's idea layer stay in step
@@ -215,6 +300,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       body,
       pageRef,
       tagIds,
+      highlightId,
     }: {
       noteId?: string;
       copyId: string;
@@ -222,6 +308,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       body: string;
       pageRef: number | null;
       tagIds: string[];
+      highlightId?: string | null;
     }) => {
       const id = noteId ?? `n-${Date.now().toString(36)}`;
       const now = new Date().toISOString();
@@ -239,7 +326,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           title: title.trim() || "Untitled note",
           body,
           page_ref: pageRef,
-          highlight_id: existing?.highlight_id ?? null,
+          highlight_id: highlightId !== undefined ? highlightId : (existing?.highlight_id ?? null),
           created_at: existing?.created_at ?? now,
           updated_at: now,
           tag_ids: tagIds,
@@ -259,6 +346,23 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const deleteNote = useCallback((noteId: string) => {
     setData((prev) => ({ ...prev, notes: prev.notes.filter((n) => n.id !== noteId) }));
+  }, []);
+
+  /**
+   * The reader's one-click action on a text selection. Returns the new id
+   * directly (computed before the setData call) rather than reading it back
+   * out of the updater closure — see createConcept/createTag below, whose
+   * ids are similarly deterministic. A version that instead stashed the
+   * created row in a `let` inside the updater and returned that would only
+   * be reliable for the first setData call in a batch; the reader calls this
+   * and then saveNote in the same handler, so that pattern would silently
+   * return undefined on the second call.
+   */
+  const createHighlight = useCallback((copyId: string, page: number, text: string) => {
+    const id = `h-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+    const highlight: Highlight = { id, copy_id: copyId, page, text, remark: null };
+    setData((prev) => ({ ...prev, highlights: [...prev.highlights, highlight] }));
+    return id;
   }, []);
 
   const createConcept = useCallback((name: string, originatingWorkId: string | null) => {
@@ -311,8 +415,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       restoreEdge,
       addToLibrary,
       addNewBook,
+      resolveDiscovered,
+      dismissDiscovered,
       saveNote,
       deleteNote,
+      createHighlight,
       createConcept,
       createTag,
       setConnection,
@@ -326,8 +433,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       restoreEdge,
       addToLibrary,
       addNewBook,
+      resolveDiscovered,
+      dismissDiscovered,
       saveNote,
       deleteNote,
+      createHighlight,
       createConcept,
       createTag,
       setConnection,

@@ -98,6 +98,16 @@ export default function LibraryPage() {
               </>
             )}
           </p>
+          {data.discovered.length > 0 && (
+            <Link
+              href={routes.settings}
+              className="mt-2 inline-block text-sm font-medium"
+              style={{ color: "var(--color-attrib)" }}
+            >
+              {data.discovered.length} new file{data.discovered.length === 1 ? "" : "s"} found in
+              OneDrive, not yet a book — review in Settings →
+            </Link>
+          )}
         </div>
 
         <div className="flex items-center gap-2">

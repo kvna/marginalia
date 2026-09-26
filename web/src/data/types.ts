@@ -124,6 +124,21 @@ export interface OneDriveConnection {
   last_sync: string | null;
 }
 
+/**
+ * A PDF sync found in the library folder that does not match any existing
+ * Work — the case the spec calls "if the book doesn't exist" (§7). Sits in
+ * this queue until the user confirms or dismisses it; nothing is written to
+ * `works`/`copies` until then. `scanned_text` stands in for the real pipeline
+ * reading the first few pages of the PDF; null means the page came back
+ * image-only (needs OCR, same caveat as the Settings screen's format note).
+ */
+export interface DiscoveredFile {
+  id: string;
+  file_path: string;
+  scanned_text: string | null;
+  found_at: string;
+}
+
 export interface LibraryData {
   authors: Author[];
   works: Work[];
@@ -134,4 +149,5 @@ export interface LibraryData {
   highlights: Highlight[];
   edges: Edge[];
   connection: OneDriveConnection;
+  discovered: DiscoveredFile[];
 }
