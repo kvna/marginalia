@@ -6,11 +6,13 @@ below; the Backend Engineer builds the real schema against it. Anything here
 that turns out to be wrong is a decision, not an open question — raise a
 change, don't silently drift from it.
 
-**Format: PDF only.** EPUB is out of scope entirely — no parser, no
-dependency, no mention of it in any screen. `Copy.file_format` is modeled as
-an enum rather than a hardcoded assumption so the schema doesn't have to
-change shape if that's revisited later, but today it has exactly one legal
-value: `pdf`.
+**Format: PDF only.** EPUB parsing is out of scope — no parser, no dependency
+for it. `Copy.file_format` is modeled as an enum rather than a hardcoded
+assumption so the schema doesn't have to change shape when that's revisited,
+and as of SUP-13 the enum's second value, `epub`, is exposed a step early: the
+Library's format filter (§7, Screen 1) offers "PDF" / "EPUB" chips now, in
+preparation for the eventual parser, even though no Copy can carry `epub` yet
+and that chip will only ever show zero results until it does.
 
 ---
 
@@ -302,9 +304,11 @@ and the data it pulls, so fixtures and the real API return the same shape.
 Grid or list of the user's **Copies** (not Works) — the books they actually
 own — with cover, title, author(s), tag chips, and an add-a-book flow that
 uploads/links a file from OneDrive. Unowned Works never appear in Library
-proper; Library is "your shelf," not the whole graph. Data: `Copy` joined to
-`Work` (title, authors via `WorkAuthor`) and `NoteTag`-derived tag chips per
-Copy.
+proper; Library is "your shelf," not the whole graph. Two filter rails: tags
+(as above) and format — PDF / EPUB chips over `Copy.file_format` (SUP-13);
+EPUB is a legal filter value ahead of the parser existing, so unlike the tag
+rail it stays visible even at a zero count. Data: `Copy` joined to `Work`
+(title, authors via `WorkAuthor`) and `NoteTag`-derived tag chips per Copy.
 
 ### Book detail
 The hub of the app. For an **owned** book: notes timeline (`Note`, newest or

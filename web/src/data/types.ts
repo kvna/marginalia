@@ -9,8 +9,12 @@ export type EdgeType = "cites" | "mentions" | "attributes_to_author" | "uses_ide
 
 export type Confidence = "high" | "medium" | "low";
 
-/** §1 — PDF only. Modeled as an enum with exactly one legal value today. */
-export type FileFormat = "pdf";
+/**
+ * §1 — PDF is the only format the app can actually open. `epub` is a legal
+ * value so the Library's format filter can offer it ahead of the parser
+ * existing (SUP-13) — no Copy will carry it until EPUB import ships.
+ */
+export type FileFormat = "pdf" | "epub";
 
 export interface Author {
   id: string;
