@@ -24,16 +24,22 @@ import {
   tagsForCopy,
 } from "@/data/selectors";
 import { Cover, Panel, TagChip } from "@/components/primitives";
-import type { Copy, Work } from "@/data/types";
+import type { Copy, FileFormat, Work } from "@/data/types";
 import { routes } from "@/lib/routes";
 
 type View = "grid" | "list";
+
+const FORMATS: { format: FileFormat; label: string }[] = [
+  { format: "pdf", label: "PDF" },
+  { format: "epub", label: "EPUB" },
+];
 
 export default function LibraryPage() {
   const { data, addNewBook } = useStore();
   const [view, setView] = useState<View>("grid");
   const [sort, setSort] = useState<"added" | "title" | "referenced">("added");
   const [filterTag, setFilterTag] = useState<string | null>(null);
+  const [filterFormat, setFilterFormat] = useState<FileFormat | null>(null);
   const [adding, setAdding] = useState(false);
 
   const shelf = useMemo(() => {
@@ -45,7 +51,8 @@ export default function LibraryPage() {
       .filter((r): r is { copy: Copy; work: Work } => r !== null)
       .filter(({ copy }) =>
         filterTag ? tagsForCopy(data, copy.id).some((t) => t.id === filterTag) : true,
-      );
+      )
+      .filter(({ copy }) => (filterFormat ? copy.file_format === filterFormat : true));
 
     return rows.sort((a, b) => {
       if (sort === "title") return a.work.title.localeCompare(b.work.title);
@@ -55,7 +62,7 @@ export default function LibraryPage() {
         );
       return b.copy.added_at.localeCompare(a.copy.added_at);
     });
-  }, [data, sort, filterTag]);
+  }, [data, sort, filterTag, filterFormat]);
 
   const referencedOnly = useMemo(
     () =>
@@ -150,6 +157,33 @@ export default function LibraryPage() {
         })}
       </div>
 
+      {/* ---- Format filter rail. EPUB stays visible at a zero count, unlike
+          tags above, because the point is to have the chip ready before the
+          parser exists (SUP-13), not to reflect what's already on the shelf. ---- */}
+      <div className="flex flex-wrap items-center gap-1.5">
+        <span className="eyebrow mr-1">Format</span>
+        <button
+          type="button"
+          onClick={() => setFilterFormat(null)}
+          className={`chip-tag cursor-pointer ${filterFormat === null ? "!border-cites !text-paper" : ""}`}
+        >
+          all
+        </button>
+        {FORMATS.map(({ format, label }) => {
+          const count = data.copies.filter((c) => c.file_format === format).length;
+          return (
+            <button
+              key={format}
+              type="button"
+              onClick={() => setFilterFormat(filterFormat === format ? null : format)}
+              className={`chip-tag cursor-pointer ${filterFormat === format ? "!border-cites !text-paper" : ""}`}
+            >
+              {label} <span className="ml-1 opacity-50">{count}</span>
+            </button>
+          );
+        })}
+      </div>
+
       {/* ---- The shelf ---- */}
       {view === "grid" ? (
         <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
@@ -167,7 +201,9 @@ export default function LibraryPage() {
 
       {shelf.length === 0 && (
         <p className="py-10 text-center text-sm text-dim italic">
-          No books carry that tag.
+          {filterFormat === "epub"
+            ? "No EPUB copies yet — EPUB import hasn't shipped."
+            : "No books match these filters."}
         </p>
       )}
 
